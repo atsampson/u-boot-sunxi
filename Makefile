@@ -22,9 +22,9 @@
 #
 
 VERSION = 2013
-PATCHLEVEL = 04
+PATCHLEVEL = 07
 SUBLEVEL =
-EXTRAVERSION =
+EXTRAVERSION = -rc3
 ifneq "$(SUBLEVEL)" ""
 U_BOOT_VERSION = $(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 else
@@ -247,6 +247,7 @@ OBJS := $(addprefix $(obj),$(OBJS))
 HAVE_VENDOR_COMMON_LIB = $(if $(wildcard board/$(VENDOR)/common/Makefile),y,n)
 
 LIBS-y += lib/libgeneric.o
+LIBS-y += lib/rsa/librsa.o
 LIBS-y += lib/lzma/liblzma.o
 LIBS-y += lib/lzo/liblzo.o
 LIBS-y += lib/zlib/libz.o
@@ -341,7 +342,7 @@ ifneq ($(CONFIG_AM33XX)$(CONFIG_OMAP34XX)$(CONFIG_OMAP44XX)$(CONFIG_OMAP54XX)$(C
 LIBS-y += $(CPUDIR)/omap-common/libomap-common.o
 endif
 
-ifneq (,$(filter $(SOC), mx25 mx27 mx5 mx6 mx31 mx35 mxs))
+ifneq (,$(filter $(SOC), mx25 mx27 mx5 mx6 mx31 mx35 mxs vf610))
 LIBS-y += arch/$(ARCH)/imx-common/libimx-common.o
 endif
 
@@ -753,6 +754,13 @@ tools: $(VERSION_FILE) $(TIMESTAMP_FILE)
 	$(MAKE) -C $@ all
 endif	# config.mk
 
+# ARM relocations should all be R_ARM_RELATIVE.
+checkarmreloc: $(obj)u-boot
+	@if test "R_ARM_RELATIVE" != \
+		"`$(CROSS_COMPILE)readelf -r $< | cut -d ' ' -f 4 | grep R_ARM | sort -u`"; \
+		then echo "$< contains relocations other than \
+		R_ARM_RELATIVE"; false; fi
+
 $(VERSION_FILE):
 		@mkdir -p $(dir $(VERSION_FILE))
 		@( localvers='$(shell $(TOPDIR)/tools/setlocalversion $(TOPDIR))' ; \
@@ -836,7 +844,8 @@ clean:
 	       $(obj)tools/mksunxiboot					  \
 	       $(obj)tools/mxsboot					  \
 	       $(obj)tools/ncb		   $(obj)tools/ubsha1		  \
-	       $(obj)tools/kernel-doc/docproc
+	       $(obj)tools/kernel-doc/docproc				  \
+	       $(obj)tools/proftool
 	@rm -f $(obj)board/cray/L1/{bootscript.c,bootscript.image}	  \
 	       $(obj)board/matrix_vision/*/bootscript.img		  \
 	       $(obj)board/voiceblue/eeprom 				  \

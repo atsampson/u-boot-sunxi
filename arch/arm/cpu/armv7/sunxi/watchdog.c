@@ -74,13 +74,12 @@ void watchdog_set(int timeout)
 {
 	static struct sunxi_wdog *const wdog =
 		&((struct sunxi_timer_reg *)SUNXI_TIMER_BASE)->wdog;
-	u32 reg_val;
 
 	/* Set timeout, reset & enable */
 	if (timeout >= 0) {
-		reg_val |= WDT_MODE_TIMEOUT(timeout) | WDT_MODE_RESET_EN |
-			   WDT_MODE_EN;
-		writel(reg_val, &wdog->mode);
+		writel(WDT_MODE_TIMEOUT(timeout) |
+				WDT_MODE_RESET_EN | WDT_MODE_EN,
+		       &wdog->mode);
 	} else {
 		writel(0, &wdog->mode);
 	}
@@ -92,6 +91,6 @@ void watchdog_init(void)
 #ifdef CONFIG_WATCHDOG
 	watchdog_set(WDT_MAX_TIMEOUT);
 #else
-	watchdog_set(-1); /* no timeout */
+	watchdog_set(WDT_OFF); /* no timeout */
 #endif
 }
